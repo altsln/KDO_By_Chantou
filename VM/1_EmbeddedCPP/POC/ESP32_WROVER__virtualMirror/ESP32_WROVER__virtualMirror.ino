@@ -40,20 +40,26 @@ void setup() {
         1,             /* priority of the task */
         &MyTaskHandle, /* Task handle to keep track of created task */
         0              /* pin task to core 0 */
-  );           
+  );
     
-
+  // Task 2: The Blinker (Core 1)
+  xTaskCreatePinnedToCore(BlinkTask, "Blink", 1000, NULL, 1, NULL, 1);
 
   Serial.println("System initialized, up and running... ");
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED off (HIGH is the voltage level)
-  Serial.println("LED OFF");
-  delay(DELAY_TIME/2);                 // wait for a Defined delay time
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED ON, Active LOW
-  Serial.println("LED ON");
-  delay(DELAY_TIME/2);                 // wait for a Defined delay time
+  vTaskDelete(NULL);  // We use tasks, so loop is empty
 }
 
+void BlinkTask(void * pvParameters) {
+  for(;;) {
+    digitalWrite(LED_BUILTIN, HIGH);        // turn the LED off (HIGH is the voltage level)
+    Serial.println("LED OFF");
+    vTaskDelay(500 / portTICK_PERIOD_MS);   // wait for a Defined delay time
+    digitalWrite(LED_BUILTIN, LOW);         // turn the LED ON, Active LOW
+    Serial.println("LED ON");
+    vTaskDelay(500 / portTICK_PERIOD_MS);   // wait for a Defined delay time
+  }
+}
