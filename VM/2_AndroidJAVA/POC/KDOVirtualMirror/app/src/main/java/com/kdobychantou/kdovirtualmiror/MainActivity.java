@@ -1,6 +1,6 @@
 /**********************************************************************
  * Filename    : MainActivity.java
- * Description : Display custom message "Virtual Mirror: Ready"
+ * Description : Setup TCP socket
  * Auther      : Alternatives Solutions
  * Modification: 2026/04/29
  **********************************************************************/
@@ -16,9 +16,13 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.kdobychantou.kdovirtualmiror.app.CounterReceiver;
+import com.kdobychantou.kdovirtualmiror.app.NetworkSettings;
+
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = MainActivity.class.getSimpleName();
+    private CounterReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+
+        receiver = new CounterReceiver();
+        receiver.startListening(NetworkSettings.IP_ADDR, NetworkSettings.PORT_NUMBER);
         Log.d(TAG, "onCreate Done!");
     }
 }
