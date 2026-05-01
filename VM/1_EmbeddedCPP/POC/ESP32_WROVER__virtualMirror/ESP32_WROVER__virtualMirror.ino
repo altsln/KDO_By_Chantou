@@ -2,6 +2,7 @@
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink when printing out heartbeat.
 * In this case we will be using the power of the 2 cores esp32 has.
+* renaming myWorkerFunc into TCPTask and code updated accordingly.
 * Auther      : Alternatives Solutions
 * Modification: 2026/04/30
 **********************************************************************/
@@ -10,17 +11,6 @@
 
 // Creating a "Handle" (an ID card for our task). It is optional for now
 TaskHandle_t MyTaskHandle;
-
-// Function for our Task on Core 0
-void MyWorkerFunc(void * pvParameters) {
-  Serial.print("Task1 running on core ");
-  Serial.println(xPortGetCoreID());
-
-  for(;;) { // Workers need their own infinite loop
-    Serial.println("System Heartbeat: Core 0 is Healthy");
-    delay(DELAY_TIME);
-  }
-}
 
 
 // the setup function runs once when you press reset or power the board
@@ -33,8 +23,8 @@ void setup() {
   // MyWorkerFunc() function, with priority 1 
   // and executed on core 0
   xTaskCreatePinnedToCore(
-        MyWorkerFunc,  /* Task function. */
-        "Task1",       /* name of task. */
+        TCPTask,       /* Task function. */
+        "TCP_VM",      /* name of task. */
         10000,         /* Stack size of task */
         NULL,          /* parameter of the task */
         1,             /* priority of the task */
@@ -61,5 +51,17 @@ void BlinkTask(void * pvParameters) {
     digitalWrite(LED_BUILTIN, LOW);         // turn the LED ON, Active LOW
     Serial.println("LED ON");
     vTaskDelay(500 / portTICK_PERIOD_MS);   // wait for a Defined delay time
+  }
+}
+
+
+// Function for our Task on Core 0
+void TCPTask(void * pvParameters) {
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+
+  for(;;) { // Workers need their own infinite loop
+    Serial.println("System Heartbeat: Core 0 is Healthy");
+    delay(DELAY_TIME);
   }
 }
