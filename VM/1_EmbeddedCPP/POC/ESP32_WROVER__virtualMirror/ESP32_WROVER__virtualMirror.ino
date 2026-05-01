@@ -14,7 +14,6 @@
 const char* ssid = "YOUR_WIFI_NAME";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-
 // Instead of a client connecting to an IP, we start a Server on port 8080
 const uint16_t serverPort = 8080;
 WiFiServer server(serverPort);
@@ -80,11 +79,13 @@ void TCPTask(void * pvParameters) {
     WiFiClient client = server.available(); // Wait for phone to connect
     if (client) {
       Serial.println("Phone Connected!");
-      int count = 12;
+      int count = 0;
       while (client.connected()) {
         // Sending as Raw Bytes (Little Endian) for your Java Receiver
         client.write((uint8_t*)&count, 4); 
         Serial.printf("Sent Counter: %d\n", count);
+        count++;
+        if(count > 4) count = 0; // Reset loop for testing
         vTaskDelay(1000 / portTICK_PERIOD_MS);
       }
       client.stop();
