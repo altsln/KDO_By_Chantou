@@ -1,6 +1,6 @@
 /**********************************************************************
  * Filename    : CounterReceiver.java
- * Description : TCP socket communication implementation
+ * Description : Reading integer from ESP32
  * Auther      : Alternatives Solutions
  * Modification: 2026/05/01
  **********************************************************************/
@@ -10,6 +10,8 @@ import android.util.Log;
 
 import java.io.DataInputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class CounterReceiver {
     private static String TAG = CounterReceiver.class.toString();
@@ -24,6 +26,14 @@ public class CounterReceiver {
 
                 while (isRunning) {
                   //Next portion of the code goes here
+                    // ESP32/C++ typically sends Little-Endian
+                    byte[] bytes = new byte[4];
+                    inputStream.readFully(bytes);
+                    int counter = ByteBuffer.wrap(bytes)
+                            .order(ByteOrder.LITTLE_ENDIAN)
+                            .getInt();
+                    //log data
+                    Log.d(TAG, "data= " + counter);
                 }
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());

@@ -1,7 +1,7 @@
 /**********************************************************************
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
-* Socket on core 2. For now Printing out ESP32 IP address.
+* Socket on core 2. Sending integer to the phone.
 * Auther      : Alternatives Solutions
 * Modification: 2026/05/01
 **********************************************************************/
@@ -13,6 +13,7 @@
 //update the ssid and password with your own for this code to run
 const char* ssid = "YOUR_WIFI_NAME";
 const char* password = "YOUR_WIFI_PASSWORD";
+
 
 // Instead of a client connecting to an IP, we start a Server on port 8080
 const uint16_t serverPort = 8080;
@@ -76,7 +77,19 @@ void TCPTask(void * pvParameters) {
   Serial.println(xPortGetCoreID());
 
   for(;;) { // Workers need their own infinite loop
-//    Serial.println("System Heartbeat: Core 0 is Healthy");
-    delay(DELAY_TIME);
+    WiFiClient client = server.available(); // Wait for phone to connect
+    if (client) {
+      Serial.println("Phone Connected!");
+      int count = 12;
+      while (client.connected()) {
+        // Sending as Raw Bytes (Little Endian) for your Java Receiver
+        client.write((uint8_t*)&count, 4); 
+        Serial.printf("Sent Counter: %d\n", count);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+      }
+      client.stop();
+      Serial.println("Phone Disconnected");
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS); // Small delay to prevent watchdog issues  
   }
 }
