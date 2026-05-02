@@ -2,8 +2,8 @@
 <!--
     /**********************************************************************
     * Filename    : activity_main.xml
-    * Description : Display custom message "Virtual Mirror: Ready"
-    * Auther      : Alternatives Solutions
+    * Description : Customizing the TextView
+    * Author      : Alternatives Solutions
     * Modification: 2026/04/29
     **********************************************************************/
 -->
@@ -16,9 +16,12 @@
     tools:context=".MainActivity">
 
     <TextView
+        android:id="@+id/tv_counter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Virtual Mirror: Ready"
+        android:text= "Virtual Mirror: Ready"
+        android:textSize="34sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

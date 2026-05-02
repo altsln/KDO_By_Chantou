@@ -1,7 +1,7 @@
 /**********************************************************************
  * Filename    : NetworkSettings.java
  * Description : Store Server (ESP32) IP and port
- * Auther      : Alternatives Solutions
+ * Author      : Alternatives Solutions
  * Modification: 2026/05/01
  **********************************************************************/
 package com.kdobychantou.kdovirtualmiror.app;
