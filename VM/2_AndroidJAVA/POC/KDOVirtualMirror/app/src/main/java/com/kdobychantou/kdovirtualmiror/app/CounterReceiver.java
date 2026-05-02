@@ -1,11 +1,14 @@
 /**********************************************************************
  * Filename    : CounterReceiver.java
- * Description : Reading integer from ESP32
- * Auther      : Alternatives Solutions
+ * Description : Reading integer from ESP32 and send it back to the
+ * main Thread
+ * Author      : Alternatives Solutions
  * Modification: 2026/05/01
  **********************************************************************/
 package com.kdobychantou.kdovirtualmiror.app;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.DataInputStream;
@@ -16,8 +19,15 @@ import java.nio.ByteOrder;
 public class CounterReceiver {
     private static String TAG = CounterReceiver.class.toString();
     private boolean isRunning = false;
+    private Handler mHandler = new Handler(Looper.getMainLooper());
 
-    public void startListening(String ip, int port) {
+    // Interface to send data back to your Activity
+    public interface OnCounterReceivedListener {
+        void onCounterReceived(int count);
+        void onError(String message);
+    }
+
+    public void startListening(String ip, int port, OnCounterReceivedListener listener) {
         isRunning = true;
         // Start a background thread (Replaces CoroutineScope)
         new Thread(() -> {
@@ -34,9 +44,16 @@ public class CounterReceiver {
                             .getInt();
                     //log data
                     Log.d(TAG, "data= " + counter);
+
+                    // Switch to Main Thread to update UI (Replaces withContext(Dispatchers.Main))
+                    mHandler.post(() -> {
+                        if (listener != null) listener.onCounterReceived(counter);
+                    });
                 }
             } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
+                mHandler.post(() -> {
+                    if (listener != null) listener.onError(e.getMessage());
+                });
             }
         }).start();
     }
