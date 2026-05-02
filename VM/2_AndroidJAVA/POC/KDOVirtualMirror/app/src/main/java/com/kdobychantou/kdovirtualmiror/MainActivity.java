@@ -1,12 +1,13 @@
 /**********************************************************************
  * Filename    : MainActivity.java
- * Description : Setup TCP socket
+ * Description : Setup TCP socket and display received data on the screen
  * Author      : Alternatives Solutions
- * Modification: 2026/04/29
+ * Modification: 2026/05/02
  **********************************************************************/
 
 package com.kdobychantou.kdovirtualmiror;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -17,14 +18,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.kdobychantou.kdovirtualmiror.app.CounterReceiver;
+import com.kdobychantou.kdovirtualmiror.app.MessageReceiver;
 import com.kdobychantou.kdovirtualmiror.app.NetworkSettings;
 
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = MainActivity.class.getSimpleName();
-    private CounterReceiver receiver;
-    private TextView counterText;
+    private MessageReceiver receiver;
+    private TextView msgText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,14 +38,21 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        counterText = findViewById(R.id.tv_counter);
-        receiver = new CounterReceiver();
+        msgText = findViewById(R.id.tv_counter);
+        receiver = new MessageReceiver();
         receiver.startListening(NetworkSettings.IP_ADDR,
                 NetworkSettings.PORT_NUMBER,
-                new CounterReceiver.OnCounterReceivedListener() {
+                new MessageReceiver.OnMessageReceivedListener() {
                     @Override
-                    public void onCounterReceived(int count) {
-                        counterText.setText("Counter: " + count);
+                    public void onMsgReceived(String message) {
+                        if (message.contains("STATUS_OK")) {
+                            msgText.setTextColor(Color.GREEN);
+                        } else if (message.contains("DATA_READY")) {
+                            msgText.setTextColor(Color.BLUE);
+                        } else {
+                            msgText.setTextColor(Color.BLACK);
+                        }
+                        msgText.setText(message);
                     }
 
                     @Override
@@ -53,5 +61,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
         Log.d(TAG, "onCreate Done!");
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        receiver.stop();
     }
 }
