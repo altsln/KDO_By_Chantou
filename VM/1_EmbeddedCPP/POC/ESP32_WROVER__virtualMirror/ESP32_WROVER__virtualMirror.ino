@@ -1,9 +1,9 @@
 /**********************************************************************
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
-* Socket on core 2. Sending integer to the phone.
+* Socket on core 2. Sending Strings to the phone.
 * Auther      : Alternatives Solutions
-* Modification: 2026/05/01
+* Modification: 2026/05/02
 **********************************************************************/
 #include <WiFi.h>
 
@@ -80,12 +80,26 @@ void TCPTask(void * pvParameters) {
     if (client) {
       Serial.println("Phone Connected!");
       int count = 0;
+      String str = "";
       while (client.connected()) {
-        // Sending as Raw Bytes (Little Endian) for your Java Receiver
-        client.write((uint8_t*)&count, 4); 
-        Serial.printf("Sent Counter: %d\n", count);
+        count %= 4;
+        switch(count) {
+          case 0:
+            str = "ESP32 Wrover & Android Phone";
+            break;
+          case 1:
+            str = "DATA_READY: Waiting for camera...";
+            break;
+          case 2:
+            str = "KDO by Chantou";
+            break;
+          case 3:
+            str = "STATUS_OK: System is running";
+            break;
+        }
         count++;
-        if(count > 4) count = 0; // Reset loop for testing
+        client.println(str);
+        Serial.printf("Sent String: %s\n", str.c_str());
         vTaskDelay(1000 / portTICK_PERIOD_MS);
       }
       client.stop();
