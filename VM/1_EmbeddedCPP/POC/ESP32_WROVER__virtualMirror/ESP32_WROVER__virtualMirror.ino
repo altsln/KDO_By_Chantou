@@ -1,9 +1,9 @@
 /**********************************************************************
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
-* Socket on core 2. Sending Image to the phone every 15 mins.
+* Socket on core 2. Sending Video to the phone.
 * Auther      : Alternatives Solutions
-* Modification: 2026/05/02
+* Modification: 2026/05/03
 **********************************************************************/
 #include <WiFi.h>
 #include "esp_camera.h" 
@@ -149,8 +149,6 @@ void TCPTask(void * pvParameters) {
         Serial.printf("Sent Image: %d bytes\n", fb->len);
         // 4. Return the frame buffer to the system or clear the buffer
         esp_camera_fb_return(fb);
-
-        vTaskDelay(15000 / portTICK_PERIOD_MS); // 15000ms = 15 seconds
       }
       client.stop();
       Serial.println("Phone Disconnected");
