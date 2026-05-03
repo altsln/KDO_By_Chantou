@@ -7,9 +7,11 @@
 
 package com.kdobychantou.kdovirtualmiror;
 
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -18,14 +20,16 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.kdobychantou.kdovirtualmiror.app.ImageReceiver;
 import com.kdobychantou.kdovirtualmiror.app.MessageReceiver;
 import com.kdobychantou.kdovirtualmiror.app.NetworkSettings;
 
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = MainActivity.class.getSimpleName();
-    private MessageReceiver receiver;
-    private TextView msgText;
+    private ImageView cameraFrameView;
+    private TextView sizeText;
+    private ImageReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,26 +42,23 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        msgText = findViewById(R.id.tv_counter);
-        receiver = new MessageReceiver();
+        sizeText = findViewById(R.id.tv_img_size);
+        cameraFrameView = findViewById(R.id.camera_frame_view);
+
+        receiver = new ImageReceiver();
         receiver.startListening(NetworkSettings.IP_ADDR,
                 NetworkSettings.PORT_NUMBER,
-                new MessageReceiver.OnMessageReceivedListener() {
+                new ImageReceiver.OnImageReceivedListener() {
                     @Override
-                    public void onMsgReceived(String message) {
-                        if (message.contains("STATUS_OK")) {
-                            msgText.setTextColor(Color.GREEN);
-                        } else if (message.contains("DATA_READY")) {
-                            msgText.setTextColor(Color.BLUE);
-                        } else {
-                            msgText.setTextColor(Color.BLACK);
-                        }
-                        msgText.setText(message);
+                    public void onImgReceived(int ingSize, Bitmap bitmap) {
+                        sizeText.setText("img Size: " + ingSize);
+                        // This must happen on the Main Thread
+                        cameraFrameView.setImageBitmap(bitmap);
                     }
 
                     @Override
                     public void onError(String message) {
-                        Log.e("NETWORK", "Error: " + message);
+                        Log.e(TAG, "NETWORK - Error: " + message);
                     }
                 });
         Log.d(TAG, "onCreate Done!");
