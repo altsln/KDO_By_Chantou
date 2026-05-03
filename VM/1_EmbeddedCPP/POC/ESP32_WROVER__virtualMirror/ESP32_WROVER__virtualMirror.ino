@@ -1,11 +1,18 @@
 /**********************************************************************
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
-* Socket on core 2. Sending Strings to the phone.
+* Socket on core 2. Sending Image to the phone every 15 mins.
 * Auther      : Alternatives Solutions
 * Modification: 2026/05/02
 **********************************************************************/
 #include <WiFi.h>
+#include "esp_camera.h" 
+
+//Freenove doc for the Cam Configuration
+//https://docs.freenove.com/projects/fnk0047/en/latest/fnk0047/codes/C/35_Camera_Tcp_Server.html
+// Select the camera model for Freenove (the WROVER model)
+#define CAMERA_MODEL_WROVER_KIT
+#include "camera_pins.h"
 
 #define LED_BUILTIN  2
 #define DELAY_TIME   1000
@@ -26,6 +33,10 @@ void setup() {
   Serial.begin(115200);
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
+
+  if (initCamera()) {
+    Serial.println("Camera configuration complete!");
+  }
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
@@ -59,6 +70,49 @@ void loop() {
   vTaskDelete(NULL);  // We use tasks, so loop is empty
 }
 
+bool initCamera() {
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sscb_sda = SIOD_GPIO_NUM;
+  config.pin_sscb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+  //freenove seeting here is   config.xclk_freq_hz = 10000000;
+  config.xclk_freq_hz = 20000000;
+  config.pixel_format = PIXFORMAT_JPEG; // We want JPEGs
+  //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
+
+  // Set resolution (QVGA is good for testing TCP)
+
+  //psramFound();  //freenove uses this here.
+  config.frame_size = FRAMESIZE_QVGA;
+  //freenove setting here is   config.jpeg_quality = 10;
+  config.jpeg_quality = 12;
+  config.fb_count = 1;
+
+  // camera init
+  esp_err_t err = esp_camera_init(&config);
+  if (ESP_OK != err) {
+    Serial.printf("Camera init failed with error 0x%x", err);
+  }
+
+  return (err == ESP_OK);
+}
+
+
 void BlinkTask(void * pvParameters) {
   for(;;) {
     digitalWrite(LED_BUILTIN, HIGH);        // turn the LED off (HIGH is the voltage level)
@@ -79,28 +133,24 @@ void TCPTask(void * pvParameters) {
     WiFiClient client = server.available(); // Wait for phone to connect
     if (client) {
       Serial.println("Phone Connected!");
-      int count = 0;
-      String str = "";
+      
       while (client.connected()) {
-        count %= 4;
-        switch(count) {
-          case 0:
-            str = "ESP32 Wrover & Android Phone";
-            break;
-          case 1:
-            str = "DATA_READY: Waiting for camera...";
-            break;
-          case 2:
-            str = "KDO by Chantou";
-            break;
-          case 3:
-            str = "STATUS_OK: System is running";
-            break;
+        // 1. Capture a frame
+        camera_fb_t* fb = esp_camera_fb_get();
+        if (!fb) {
+          Serial.println("Camera capture failed");
+          continue;
         }
-        count++;
-        client.println(str);
-        Serial.printf("Sent String: %s\n", str.c_str());
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // 2. Send the SIZE of the image first (The Header)
+        uint32_t size = fb->len;
+        client.write((const uint8_t*)&size, sizeof(size));
+        // 3. Send the actual IMAGE data (The Payload)
+        client.write(fb->buf, fb->len);
+        Serial.printf("Sent Image: %d bytes\n", fb->len);
+        // 4. Return the frame buffer to the system or clear the buffer
+        esp_camera_fb_return(fb);
+
+        vTaskDelay(15000 / portTICK_PERIOD_MS); // 15000ms = 15 seconds
       }
       client.stop();
       Serial.println("Phone Disconnected");
