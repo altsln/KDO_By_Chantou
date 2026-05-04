@@ -23,13 +23,14 @@ import androidx.core.view.WindowInsetsCompat;
 import com.kdobychantou.kdovirtualmiror.app.ImageReceiver;
 import com.kdobychantou.kdovirtualmiror.app.MessageReceiver;
 import com.kdobychantou.kdovirtualmiror.app.NetworkSettings;
+import com.kdobychantou.kdovirtualmiror.app.VideoReceiver;
 
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = MainActivity.class.getSimpleName();
     private ImageView cameraFrameView;
     private TextView sizeText;
-    private ImageReceiver receiver;
+    private VideoReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,15 +46,21 @@ public class MainActivity extends AppCompatActivity {
         sizeText = findViewById(R.id.tv_img_size);
         cameraFrameView = findViewById(R.id.camera_frame_view);
 
-        receiver = new ImageReceiver();
-        receiver.startListening(NetworkSettings.IP_ADDR,
+        receiver = new VideoReceiver();
+        receiver.startVideoListening(NetworkSettings.IP_ADDR,
                 NetworkSettings.PORT_NUMBER,
-                new ImageReceiver.OnImageReceivedListener() {
+                new VideoReceiver.OnVideoReceivedListener() {
                     @Override
                     public void onImgReceived(int ingSize, Bitmap bitmap) {
-                        sizeText.setText("img Size: " + ingSize);
+                        //sizeText.setText("img Size: " + ingSize);
                         // This must happen on the Main Thread
                         cameraFrameView.setImageBitmap(bitmap);
+                    }
+
+                    @Override
+                    public void onStatusUpdate(String fps) {
+                        //Log.d(TAG, fps);
+                        sizeText.setText(fps);
                     }
 
                     @Override
