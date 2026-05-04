@@ -1,10 +1,11 @@
 /**********************************************************************
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
-* Socket on core 2. Sending Video to the phone.
+* Socket on core 2. Implemention mDNS for autodetection
 * Auther      : Alternatives Solutions
 * Modification: 2026/05/03
 **********************************************************************/
+#include <ESPmDNS.h>
 #include <WiFi.h>
 #include "esp_camera.h" 
 
@@ -44,6 +45,8 @@ void setup() {
   Serial.print("ESP32 IP Address: ");
   Serial.println(WiFi.localIP()); // YOU WILL NEED THIS FOR THE ANDROID APP
 
+  setup_mDNS();
+
   server.begin(); // Start listening for the phone
 
   // create a task that will be executed in the 
@@ -69,6 +72,18 @@ void setup() {
 void loop() {
   vTaskDelete(NULL);  // We use tasks, so loop is empty
 }
+
+
+void setup_mDNS() {
+  if (!MDNS.begin("esp32-KDO")) {
+    Serial.println("Error setting up MDNS responder!");
+  } else {
+    Serial.println("mDNS responder started at esp32-KDO.local");
+    // Advertise the TCP service on port 8080
+    MDNS.addService("arduino", "tcp", 8080);
+  }
+}
+
 
 bool initCamera() {
   camera_config_t config;
