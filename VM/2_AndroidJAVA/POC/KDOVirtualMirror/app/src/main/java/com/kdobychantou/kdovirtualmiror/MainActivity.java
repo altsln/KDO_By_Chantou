@@ -1,7 +1,8 @@
 /**********************************************************************
  * Filename    : MainActivity.java
  * Description : Setup TCP socket and display received data on the screen
- * The connection process is done now via mDNS
+ * The connection process is done now via mDNS. Connection is now
+ * triggered after user clicks on the connect button
  * Author      : Alternatives Solutions
  * Modification: 2026/05/04
  **********************************************************************/
@@ -9,9 +10,10 @@
 package com.kdobychantou.kdovirtualmiror;
 
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,9 +24,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.kdobychantou.kdovirtualmiror.app.ImageReceiver;
-import com.kdobychantou.kdovirtualmiror.app.MessageReceiver;
-import com.kdobychantou.kdovirtualmiror.app.NetworkSettings;
 import com.kdobychantou.kdovirtualmiror.app.VideoReceiver;
 import com.kdobychantou.kdovirtualmiror.app.mdns.DiscoveryManager;
 
@@ -33,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private static String TAG = MainActivity.class.getSimpleName();
     private ImageView cameraFrameView;
     private TextView sizeText;
+    private Button btnConnect;
     private VideoReceiver receiver;
 
     @Override
@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        btnConnect = findViewById(R.id.btn_connect);
         sizeText = findViewById(R.id.tv_img_size);
         cameraFrameView = findViewById(R.id.camera_frame_view);
 
@@ -90,8 +91,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-        Log.d(TAG, "Start discovery");
-        discoveryManager.startDiscovery(getApplicationContext());
+        btnConnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Your callback logic here
+                Toast.makeText(MainActivity.this, "Discovery Started...", Toast.LENGTH_SHORT).show();
+
+                // Call this when the user clicks a "Scan" or "Connect" button
+                Log.d(TAG, "Start discovery");
+                discoveryManager.startDiscovery(getApplicationContext());
+            }
+        });
 
         Log.d(TAG, "onCreate Done!");
     }
