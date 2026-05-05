@@ -1,9 +1,10 @@
 /**********************************************************************
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
-* Socket on core 2. Implemention mDNS for autodetection
+* Socket on core 2. Implemention mDNS for autodetection and starting
+* ESP32Wrover as an AP (Access Point)
 * Auther      : Alternatives Solutions
-* Modification: 2026/05/03
+* Modification: 2026/05/04
 **********************************************************************/
 #include <ESPmDNS.h>
 #include <WiFi.h>
@@ -19,8 +20,8 @@
 #define DELAY_TIME   1000
 
 //update the ssid and password with your own for this code to run
-const char* ssid = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid_ap = "ESP32-KDO_Cam";
+const char* password_ap = "3346DundasStreetW";
 
 // Instead of a client connecting to an IP, we start a Server on port 8080
 const uint16_t serverPort = 8080;
@@ -39,11 +40,13 @@ void setup() {
     Serial.println("Camera configuration complete!");
   }
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
-  Serial.println("\nWiFi Connected!");
-  Serial.print("ESP32 IP Address: ");
-  Serial.println(WiFi.localIP()); // YOU WILL NEED THIS FOR THE ANDROID APP
+  //WiFi.begin(ssid, password);
+  //while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+  //Serial.println("\nWiFi Connected!");  
+  WiFi.softAP(ssid_ap, password_ap);
+  Serial.print("ESP32 AP IP Address: ");
+  //Serial.println(WiFi.localIP());
+  Serial.println(WiFi.softAPIP()); 
 
   setup_mDNS();
 
