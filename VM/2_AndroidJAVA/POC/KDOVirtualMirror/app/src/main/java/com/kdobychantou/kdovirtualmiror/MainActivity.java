@@ -2,9 +2,9 @@
  * Filename    : MainActivity.java
  * Description : Setup TCP socket and display received data on the screen
  * The connection process is done now via mDNS. Connection is now
- * triggered after user clicks on the connect button
+ * triggered after user clicks on the connect button. Update UI
  * Author      : Alternatives Solutions
- * Modification: 2026/05/04
+ * Modification: 2026/05/05
  **********************************************************************/
 
 package com.kdobychantou.kdovirtualmiror;
@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            //v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
