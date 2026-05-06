@@ -1,8 +1,9 @@
 /**********************************************************************
  * Filename    : StreamViewModel.java
  * Description : Setup VideoReceiver to live configuration changes
+ * and all buttons work to connect and disconnect
  * Author      : Alternatives Solutions
- * Modification: 2026/05/05
+ * Modification: 2026/05/06
  **********************************************************************/
 package com.kdobychantou.kdovirtualmiror.app.viewmodel;
 
@@ -60,4 +61,15 @@ public class StreamViewModel extends ViewModel {
             videoReceiver.stop();
         }
     }
+
+    public void stopStreaming() {
+        if (videoReceiver != null) {
+            videoReceiver.stopVideoListening();
+            videoReceiver = null; // Important: Clear it so it can be re-initialized
+            currentFrame.postValue(null); // Clear the image on the UI
+            fpsText.postValue("Disconnected");
+        }
+    }
+
+
 }

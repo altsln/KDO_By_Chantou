@@ -2,8 +2,9 @@
  * Filename    : VideoReceiver.java
  * Description : Reading image size and image data from ESP32 and
  * build FPS and send it back to the main Thread
+ * and all buttons work to connect and disconnect
  * Author      : Alternatives Solutions
- * Modification: 2026/05/03
+ * Modification: 2026/05/06
  **********************************************************************/
 package com.kdobychantou.kdovirtualmiror.app;
 
@@ -14,6 +15,8 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -27,6 +30,8 @@ public class VideoReceiver {
     private Bitmap reusableBitmap = null;
     private BitmapFactory.Options options = new BitmapFactory.Options();
     private Handler mHandler = new Handler(Looper.getMainLooper());
+    private Socket socket =  null;
+    private final Object socketLock = new Object(); // Your "Mutex"
 
     // Interface to send data back to your Activity
     public interface OnVideoReceivedListener {
@@ -39,8 +44,11 @@ public class VideoReceiver {
         isRunning = true;
         // Start a background thread (Replaces CoroutineScope)
         new Thread(() -> {
-            try (Socket socket = new Socket(ip, port);
-                 DataInputStream dis = new DataInputStream(socket.getInputStream())) {
+            try {
+                socket = new Socket();  //(ip, port);
+                // 2000ms (2 seconds) is plenty for a local SoftAP connection
+                socket.connect(new InetSocketAddress(ip, port), 2000);
+                DataInputStream dis = new DataInputStream(socket.getInputStream());
                 Log.d(TAG, "Connected to ESP32 Image Server");
 
                 while (isRunning) {
@@ -113,6 +121,33 @@ public class VideoReceiver {
 
             frameCount = 0;
             lastTime = currentTime;
+        }
+    }
+
+    public void stopVideoListening() {
+        stop(); // 1. Tell the loop to stop
+        new Thread(() -> {
+            closeResources(); // 2. Close on a background thread to avoid NetworkOnMainThreadException
+        }).start();
+    }
+
+    private void closeResources() {
+        // We lock the 'socketLock' object, NOT the socket itself
+        synchronized (socketLock) {
+            try {
+                if (socket != null) {
+                    if( !socket.isClosed()) {
+                        socket.shutdownInput(); // Force any pending reads to end
+                        socket.close();
+                    }
+                    socket = null; // Safe to set null because the lock still exists
+                    Log.d(TAG, "Socket cleaned up safely.");
+                } else {
+                    Log.d(TAG, "Socket is already null.");
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Shutdown error: " + e.getMessage());
+            }
         }
     }
 

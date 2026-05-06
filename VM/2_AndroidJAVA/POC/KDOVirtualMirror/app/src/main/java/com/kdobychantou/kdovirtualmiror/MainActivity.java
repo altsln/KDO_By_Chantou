@@ -2,9 +2,10 @@
  * Filename    : MainActivity.java
  * Description : Setup TCP socket and display received data on the screen
  * The connection process is done now via mDNS. Connection is now
- * triggered after user clicks on the connect button. Update UI
+ * triggered after user clicks on the connect button. Update UI,
+ * and all buttons work to connect and disconnect
  * Author      : Alternatives Solutions
- * Modification: 2026/05/05
+ * Modification: 2026/05/06
  **********************************************************************/
 
 package com.kdobychantou.kdovirtualmiror;
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView cameraFrameView;
     private TextView sizeText;
     private Button btnConnect;
+    private Button btnDisconnect;
 //    private VideoReceiver receiver;
     private StreamViewModel viewModel;
     private DiscoveryManager discoveryManager;
@@ -51,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnConnect = findViewById(R.id.btn_connect);
+        btnDisconnect = findViewById(R.id.btn_disconnect);
         sizeText = findViewById(R.id.tv_img_size);
         cameraFrameView = findViewById(R.id.camera_frame_view);
 
@@ -96,6 +99,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Start discovery");
                 discoveryManager.startDiscovery(getApplicationContext());
             }
+        });
+
+
+        btnDisconnect.setOnClickListener(v -> {
+            viewModel.stopStreaming();
+            Toast.makeText(this, "Stream Stopped", Toast.LENGTH_SHORT).show();
         });
 
         Log.d(TAG, "onCreate Done!");
