@@ -14,6 +14,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -94,7 +95,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Your callback logic here
                 Toast.makeText(MainActivity.this, "Discovery Started...", Toast.LENGTH_SHORT).show();
-
+                // TURN OFF SLEEP MODE (Keep screen on)
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 // Call this when the user clicks a "Scan" or "Connect" button
                 Log.d(TAG, "Start discovery");
                 discoveryManager.startDiscovery(getApplicationContext());
@@ -104,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
 
         btnDisconnect.setOnClickListener(v -> {
             viewModel.stopStreaming();
+            //TURN ON SLEEP MODE (Allow screen to dim)
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             Toast.makeText(this, "Stream Stopped", Toast.LENGTH_SHORT).show();
         });
 
