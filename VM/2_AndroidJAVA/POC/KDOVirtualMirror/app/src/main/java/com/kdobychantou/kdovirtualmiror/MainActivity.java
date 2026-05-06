@@ -23,9 +23,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.kdobychantou.kdovirtualmiror.app.VideoReceiver;
 import com.kdobychantou.kdovirtualmiror.app.mdns.DiscoveryManager;
+import com.kdobychantou.kdovirtualmiror.app.viewmodel.StreamViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,7 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageView cameraFrameView;
     private TextView sizeText;
     private Button btnConnect;
-    private VideoReceiver receiver;
+//    private VideoReceiver receiver;
+    private StreamViewModel viewModel;
+    private DiscoveryManager discoveryManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,46 +54,37 @@ public class MainActivity extends AppCompatActivity {
         sizeText = findViewById(R.id.tv_img_size);
         cameraFrameView = findViewById(R.id.camera_frame_view);
 
-        receiver = new VideoReceiver();
-        // Set the listener
-        VideoReceiver.OnVideoReceivedListener videoListener = new VideoReceiver.OnVideoReceivedListener() {
-            @Override
-            public void onImgReceived(int ingSize, Bitmap bitmap) {
-                //sizeText.setText("img Size: " + ingSize);
-                // This must happen on the Main Thread
-                cameraFrameView.setImageBitmap(bitmap);
-            }
+        // Initialize the ViewModel
+        viewModel = new ViewModelProvider(this).get(StreamViewModel.class);
 
+        // 1. Observe the Video Frame
+        viewModel.getFrame().observe(this, bitmap -> {
+            cameraFrameView.setImageBitmap(bitmap);
+        });
+
+        // 2. Observe the FPS
+        viewModel.getFps().observe(this, fps -> {
+            sizeText.setText(fps);
+        });
+
+        // 3. Your Discovery Logic
+        discoveryManager = new DiscoveryManager(this, new DiscoveryManager.OnDeviceFoundListener() {
             @Override
-            public void onStatusUpdate(String fps) {
-                //Log.d(TAG, fps);
-                sizeText.setText(fps);
+            public void onDeviceFound(String ip, int port) {
+                // Now you have the dynamic IP! Start the video
+                Log.d(TAG, "ipAdr= " + ip);
+                /*runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Found ESP32 at " + ip, Toast.LENGTH_SHORT).show();
+                    receiver.startVideoListening(ip, port, videoListener);
+                });*/
+                viewModel.startStreaming(ip, port);
             }
 
             @Override
             public void onError(String message) {
-                Log.e(TAG, "NETWORK - Error: " + message);
+                Log.e("Discovery", message);
             }
-        };
-
-
-        DiscoveryManager discoveryManager =
-                new DiscoveryManager(this, new DiscoveryManager.OnDeviceFoundListener() {
-                    @Override
-                    public void onDeviceFound(String ip, int port) {
-                        // Now you have the dynamic IP! Start the video
-                        Log.d(TAG, "ipAdr= " + ip);
-                        runOnUiThread(() -> {
-                            Toast.makeText(MainActivity.this, "Found ESP32 at " + ip, Toast.LENGTH_SHORT).show();
-                            receiver.startVideoListening(ip, port, videoListener);
-                        });
-                    }
-
-                    @Override
-                    public void onError(String message) {
-                        Log.e("Discovery", message);
-                    }
-                });
+        });
 
         btnConnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,6 +105,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        receiver.stop();
+//        receiver.stop();
     }
 }
