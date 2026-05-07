@@ -3,13 +3,15 @@
  * Description : Setup TCP socket and display received data on the screen
  * The connection process is done now via mDNS. Connection is now
  * triggered after user clicks on the connect button. Update UI,
- * and all buttons work to connect and disconnect
+ * and all buttons work to connect and disconnect. Now added sharedPrefs
+ * to cache the ip address and the port number.
  * Author      : Alternatives Solutions
  * Modification: 2026/05/06
  **********************************************************************/
 
 package com.kdobychantou.kdovirtualmiror;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,6 +36,7 @@ import com.kdobychantou.kdovirtualmiror.app.viewmodel.StreamViewModel;
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = MainActivity.class.getSimpleName();
+    private static final String PREFS_NAME = "ESP32_CACHE";
     private ImageView cameraFrameView;
     private TextView sizeText;
     private Button btnConnect;
@@ -75,6 +78,13 @@ public class MainActivity extends AppCompatActivity {
         discoveryManager = new DiscoveryManager(this, new DiscoveryManager.OnDeviceFoundListener() {
             @Override
             public void onDeviceFound(String ip, int port) {
+
+                // Save the discovery result for next time
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                        .putString("last_ip", ip)
+                        .putInt("last_port", port)
+                        .apply();
+
                 // Now you have the dynamic IP! Start the video
                 Log.d(TAG, "ipAdr= " + ip);
                 /*runOnUiThread(() -> {
@@ -98,8 +108,8 @@ public class MainActivity extends AppCompatActivity {
                 // TURN OFF SLEEP MODE (Keep screen on)
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 // Call this when the user clicks a "Scan" or "Connect" button
-                Log.d(TAG, "Start discovery");
-                discoveryManager.startDiscovery(getApplicationContext());
+                Log.d(TAG, "attempt to connect");
+                attemptConnection();
             }
         });
 
@@ -112,6 +122,20 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Log.d(TAG, "onCreate Done!");
+    }
+
+    private void attemptConnection() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String cachedIp = prefs.getString("last_ip", null);
+        int cachedPort = prefs.getInt("last_port", -1);
+
+        if (cachedIp != null && cachedPort != -1) {
+            Log.d(TAG, "Using cached IP: " + cachedIp);
+            viewModel.startStreaming(cachedIp, cachedPort);
+        } else {
+            Log.d(TAG, "No cache, starting discovery.");
+            discoveryManager.startDiscovery(getApplicationContext());
+        }
     }
 
 
