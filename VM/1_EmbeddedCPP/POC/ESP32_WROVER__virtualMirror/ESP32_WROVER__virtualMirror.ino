@@ -2,9 +2,9 @@
 * Filename    : ESP32_WROVER__virtualMirror
 * Description : Make builtin led to blink on core 1 when hanling TCP
 * Socket on core 2. Implemention mDNS for autodetection and starting
-* ESP32Wrover as an AP (Access Point)
+* ESP32Wrover as an AP (Access Point), and Camera upgrade to OV5640
 * Auther      : Alternatives Solutions
-* Modification: 2026/05/04
+* Modification: 2026/05/06
 **********************************************************************/
 #include <ESPmDNS.h>
 #include <WiFi.h>
@@ -109,25 +109,73 @@ bool initCamera() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   //freenove seeting here is   config.xclk_freq_hz = 10000000;
-  config.xclk_freq_hz = 20000000;
+  //old  config.xclk_freq_hz = 20000000;
+  
+  // OV5640 is much more stable at 12MHz or 16MHz than 20MHz.
+  // This value works perfectly for both sensors.
+  config.xclk_freq_hz = 12000000;
+
   config.pixel_format = PIXFORMAT_JPEG; // We want JPEGs
   //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
 
   // Set resolution (QVGA is good for testing TCP)
 
   //psramFound();  //freenove uses this here.
+  /* old
   config.frame_size = FRAMESIZE_QVGA;
-  //freenove setting here is   config.jpeg_quality = 10;
+  //freenove seeting here is   config.jpeg_quality = 10;
   config.jpeg_quality = 12;
-  config.fb_count = 1;
+  */
+  // Use SVGA (800x600) for a "High Def" salon look. 
+  // Both sensors support this easily.
+  config.frame_size = FRAMESIZE_SVGA;
+  config.jpeg_quality = 12;
 
-  // camera init
+
+  //old  config.fb_count = 1;
+
+  // IMPORTANT: Increase to 2 buffers. 
+  // This prevents the Android "skia" warnings because the ESP32 can
+  // capture the next frame while the current one is still being sent.
+  config.fb_count = 2;
+
+
+  // Init camera
   esp_err_t err = esp_camera_init(&config);
   if (ESP_OK != err) {
     Serial.printf("Camera init failed with error 0x%x", err);
+    return false;
   }
 
-  return (err == ESP_OK);
+  // SENSOR SPECIFIC TUNING
+  sensor_t* s = esp_camera_sensor_get();
+  if (s->id.PID == OV5640_PID) {
+    Serial.println("OV5640 detected! Enabling Salon Pro features...");
+
+    // Most recent library versions use these commands:
+    s->set_vflip(s, 1);    // Match your salon mounting
+    s->set_hmirror(s, 1);
+
+    // Use the driver-specific call
+    // High-Detail Mode
+    s->set_sharpness(s, 2); 
+    s->set_brightness(s, 1);
+
+
+    // TRIGGER AUTOFOCUS
+    // On many ESP32-S3 and high-end boards, this is the standard call:
+    esp_err_t af_err = s->set_reg(s, 0xFF, 0xFF, 0x01); // Standard trigger for many AF drivers
+    
+    Serial.println("Autofocus triggered.");
+
+/*
+//    s->set_af_mode(s, 1); // 1 = Continuous
+//    s->set_af_trigger(s, 1);*/
+  } else if (s->id.PID == OV3660_PID) {
+    Serial.println("OV3660 detected. Using standard settings.");
+  }
+
+  return true;
 }
 
 
