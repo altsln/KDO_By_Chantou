@@ -4,9 +4,10 @@
  * The connection process is done now via mDNS. Connection is now
  * triggered after user clicks on the connect button. Update UI,
  * and all buttons work to connect and disconnect. Now added sharedPrefs
- * to cache the ip address and the port number.
+ * to cache the ip address and the port number. scaleGestureDetector
+ * added
  * Author      : Alternatives Solutions
- * Modification: 2026/05/06
+ * Modification: 2026/05/07
  **********************************************************************/
 
 package com.kdobychantou.kdovirtualmiror;
@@ -15,6 +16,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -45,6 +47,10 @@ public class MainActivity extends AppCompatActivity {
     private StreamViewModel viewModel;
     private DiscoveryManager discoveryManager;
 
+    private ScaleGestureDetector scaleGestureDetector;
+    private float mScaleFactor = 1.0f;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
             //v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        // TURN OFF SLEEP MODE (Keep screen on)  WORKAROUND NEEDED IF SCREEN ROTATE
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         btnConnect = findViewById(R.id.btn_connect);
         btnDisconnect = findViewById(R.id.btn_disconnect);
@@ -121,6 +130,16 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Stream Stopped", Toast.LENGTH_SHORT).show();
         });
 
+
+        //gesture management
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
+
+        // Attach the detector to the ImageView's touch listener
+        cameraFrameView.setOnTouchListener((v, event) -> {
+            scaleGestureDetector.onTouchEvent(event);
+            return true;
+        });
+
         Log.d(TAG, "onCreate Done!");
     }
 
@@ -143,5 +162,22 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 //        receiver.stop();
+    }
+
+
+    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            mScaleFactor *= detector.getScaleFactor();
+
+            // Limit the zoom: 1x to 5x
+            mScaleFactor = Math.max(1.0f, Math.min(mScaleFactor, 5.0f));
+
+            cameraFrameView.setScaleX(mScaleFactor);
+            cameraFrameView.setScaleY(mScaleFactor);
+
+            Log.d(TAG, "Current Zoom: " + mScaleFactor);
+            return true;
+        }
     }
 }
